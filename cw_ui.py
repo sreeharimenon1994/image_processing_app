@@ -12,23 +12,25 @@ if not os.path.exists('results'):
 
 imgDim = 275
 
+# lookup table for logarithmic operation
 LUTLog = {}
 tmp = 255/np.log(256)
 for x in range(256):
     LUTLog[x] = np.log(1+x)*tmp
 
-
+# lookup table for power-law
 LUTPower = {}
 gamma = .01
 tmp = 255**(1 - gamma)
 for x in range(256):
     LUTPower[x] = tmp*x**gamma
 
-
+#  random lookup table
 RandLUT = {}
 for x in range(256):
     RandLUT[x] = np.random.randint(256)
 
+# bit for bit-plane slicing
 bit = 4
 
 kernel = {
@@ -46,7 +48,7 @@ kernel = {
     "laplacian_of_gaussian": np.array([[0,0,-1,0,0],[0,-1,-2,-1,0],[-1,-2,16,-2,-1],[0,-1,-2,-1,0],[0,0,-1,0,0]])
 }
 
-
+#  used to clip all values exceeding the limit
 def ClippingImage(imgTmp, norm=False):
     if norm:
         imgTmp = ((imgTmp - np.min(imgTmp))/np.max(imgTmp))*255
@@ -55,10 +57,11 @@ def ClippingImage(imgTmp, norm=False):
     imgTmp = imgTmp.astype("uint8")
     return imgTmp
 
-
+# Function to read images in all formats
 def ReadImage(path):
     if path.endswith('.raw'):
         imgTmp = np.fromfile(path, dtype='int8', sep="")
+        #  finding the dimension to resize(only for square images)
         s = int(math.sqrt(imgTmp.shape[0]))
         imgTmp = imgTmp.reshape(s,s)
         original = cv.cvtColor(imgTmp.astype("uint8"), cv.COLOR_GRAY2BGR)
@@ -67,22 +70,6 @@ def ReadImage(path):
         imgTmp = np.dot(original[...,:3], [0.2989, 0.5870, 0.1140])
     imgTmp = ClippingImage(imgTmp)
     return original, imgTmp
-
-
-def ShowImages(original, processed):
-    if isinstance(original, list) == False:
-        original = [original]
-    if isinstance(processed, list) == False:
-        processed = [processed]
-    l = len(original)
-    i = 1
-    for x in list(zip(original, processed)):
-        plt.subplot(l, 2, i),plt.imshow(x[0], cmap='gray'),plt.title('Original')
-        plt.xticks([]), plt.yticks([])
-        plt.subplot(l, 2, i+1),plt.imshow(x[1], cmap='gray'),plt.title('Processed')
-        plt.xticks([]), plt.yticks([])
-        i += 2
-    plt.show()
 
 
 def RescaleImage(imgTmp, scale):
@@ -129,7 +116,7 @@ def BinaryOperations(a, b, op):
     res = ClippingImage(res)
     return res
 
-
+# these vectors are created so as to apply function to each item in array
 LogLUT = lambda i: LUTLog[i]
 LogLUTVector = np.vectorize(LogLUT)
 PowerLUT = lambda i: LUTPower[i]
@@ -142,7 +129,7 @@ BinaryReprVector = np.vectorize(BinaryExtraction)
 
 def ImageTransformation(imgTmp, op):
     if op == 'negative_linear':
-        res = 256 - 1 - imgTmp
+        res = 255 - imgTmp
     elif op == 'logarithmic':
         tmp = LogLUTVector(imgTmp)
         res = tmp*np.log(1+imgTmp)
@@ -159,6 +146,7 @@ def ImageTransformation(imgTmp, op):
 
 
 def Histogram(imgTmp, norm=False):
+    #  counting the values in the array, return the index and count
     ind, cnt = np.unique(imgTmp, return_counts=True)
     hist = []
     for x in range(256):
@@ -177,7 +165,7 @@ def Convolution(img, kernel):
     dst = (cv.filter2D(np.float32(img), -1, kernel)).astype("uint8")
     return dst
 
-
+#  created sub matrices of 3x3
 def SubMatrices(mat):
     sub_shape = (3, 3)
     view_shape = tuple(np.subtract(mat.shape, sub_shape) + 1) + sub_shape
@@ -199,7 +187,7 @@ def Threshold(imgTmp2, limit=[]):
     imgTmp[imgTmp > 0] = 255
     return imgTmp
 
-
+#  To convert the matplot figure to an numpy array
 def MatplotLibToImage(hist):
     plt.bar(list(range(1,257)), hist)
     fig = plt.figure()
@@ -209,71 +197,6 @@ def MatplotLibToImage(hist):
     data = data.reshape(fig.canvas.get_width_height()[::-1] + (3,))
     plt.close("all")
     return data
-
-
-window = tk.Tk()
-window.geometry("900x700")
-window.minsize(900, 700)
-window.wm_title("Image Processing Coursework")
-
-imageTkOptions = ["Baboon.bmp", "Cameraman.tif", "Peppers.raw", "Goldhill.tif", "Mars.jpg", "Ocr.png", "WindFarm.png"]
-labTkOptions = {"Lab 1": ["Read Multiple Images"],
-                "Lab 2": ["Re-Scaling", "Shifting", "Re-Scaling and Shifting"],
-                "Lab 3": ["Addition", "Subtraction", "Multiplication", "Division", "Bitwise NOT", "Bitwise AND", "Bitwise OR", "Bitwise XOR", "ROI-Based Operation"],
-                "Lab 4": ["Negative Linear Transform", "Logarithmic Function", "Power-Law", "Random Look-up Table", "Bit-plane Slicing"],
-                "Lab 5": ["Histogram", "Normalized Histogram", "Histogram Equalisation"],
-                "Lab 6": ["Averaging", "Weighted Averaging", "4-neighbour Laplacian", "8-neighbour Laplacian", "4-neighbour Laplacian Enhancement", "8-neighbour Laplacian Enhancement", "Roberts", "Roberts with Absolute Value", "Sobel X", "Sobel Y", "Gaussian", "Laplacian of Gaussian"],
-                "Lab 7": ["Salt-and-Pepper Noise", "Min Filtering", "Max Filtering", "Midpoint Filtering", "Median Filtering"],
-                "Lab 8": ["Simple Thresholding", "Automated Thresholding", "Adaptive Thresholding"]
-                }
-labTkOptions['All Labs'] = [x for sub in labTkOptions.values() for x in sub]
-
-saveasTkOptions = [".bmp", ".jpg", ".png"]
-
-
-image1TkVar = tk.StringVar(window)
-image1TkVar.set("Baboon.bmp")
-image2TkVar = tk.StringVar(window)
-image2TkVar.set("Goldhill.tif")
-
-labTkVar = tk.StringVar(window)
-labTkVar.set("Lab 2")
-
-labxTkVar = tk.StringVar(window)
-labxTkVar.set(labTkOptions[labTkVar.get()][0])
-
-saveasTkVar = tk.StringVar(window)
-saveasTkVar.set(saveasTkOptions[1])
-
-
-image1TkVarFilter = tk.OptionMenu(window, image1TkVar, *imageTkOptions)
-image1TkVarFilter.config(width=13)
-image1TkVarFilter.place(x=0.0, y=0.0, anchor=tk.NW)
-
-image2TkVarFilter = tk.OptionMenu(window, image2TkVar, *imageTkOptions)
-image2TkVarFilter.config(width=13)
-image2TkVarFilter.place(x=123, y=0.0, anchor=tk.NW)
-
-labTkVarFilter = tk.OptionMenu(window, labTkVar, *labTkOptions.keys())
-labTkVarFilter.place(relx=0.5, y=0.0, anchor=tk.NE)
-
-labxTkVarFilter = tk.OptionMenu(window, labxTkVar, *labTkOptions[labTkVar.get()])
-labxTkVarFilter.place(relx=0.5, y=0.0, anchor=tk.NW)
-
-saveasTkVarFilter = tk.OptionMenu(window, saveasTkVar, *saveasTkOptions)
-saveasTkVarFilter.config(width=4)
-saveasTkVarFilter.place(relx=.92, y=0.0, anchor=tk.NW)
-
-canvas1 = tk.Canvas(window, width=imgDim, height=imgDim)
-canvas2 = tk.Canvas(window, width=imgDim, height=imgDim)
-canvas3 = tk.Canvas(window, width=imgDim, height=imgDim)
-canvas4 = tk.Canvas(window, width=imgDim, height=imgDim)
-canvas5 = tk.Canvas(window, width=imgDim, height=imgDim)
-
-text = tk.Text(window)
-text.insert(tk.INSERT, "Save As:")
-text.place(relx=.92, y=5, anchor=tk.NE)
-text.config(width=8, height=1.3, state="disabled", pady=2.5, bd=0, bg=window.cget("background"))
 
 
 def ImageResize(imgTmp, size=()):
@@ -305,6 +228,93 @@ def ImageResize(imgTmp, size=()):
     return imgTmp
 
 
+window = tk.Tk()
+window.geometry("900x700")
+window.minsize(900, 700)
+window.wm_title("Image Processing Coursework")
+
+imageTkOptions = ["Baboon.bmp", "Cameraman.tif", "Peppers.raw", "Goldhill.tif", "Mars.jpg", "Ocr.png", "WindFarm.png"]
+labTkOptions = {"Lab 1": ["Read Multiple Images"],
+                "Lab 2": ["Re-Scaling", "Shifting", "Re-Scaling and Shifting"],
+                "Lab 3": ["Addition", "Subtraction", "Multiplication", "Division", "Bitwise NOT", "Bitwise AND", "Bitwise OR", "Bitwise XOR", "ROI-Based Operation"],
+                "Lab 4": ["Negative Linear Transform", "Logarithmic Function", "Power-Law", "Random Look-up Table", "Bit-plane Slicing"],
+                "Lab 5": ["Histogram", "Normalized Histogram", "Histogram Equalisation"],
+                "Lab 6": ["Averaging", "Weighted Averaging", "4-neighbour Laplacian", "8-neighbour Laplacian", "4-neighbour Laplacian Enhancement", "8-neighbour Laplacian Enhancement", "Roberts", "Roberts with Absolute Value", "Sobel X", "Sobel Y", "Gaussian", "Laplacian of Gaussian"],
+                "Lab 7": ["Salt-and-Pepper Noise", "Min Filtering", "Max Filtering", "Midpoint Filtering", "Median Filtering"],
+                "Lab 8": ["Simple Thresholding", "Automated Thresholding", "Adaptive Thresholding"]
+                }
+labTkOptions['All Labs'] = [x for sub in labTkOptions.values() for x in sub]
+
+saveasTkOptions = [".bmp", ".jpg", ".png"]
+
+
+image1TkVar = tk.StringVar(window)
+image1TkVar.set("Baboon.bmp")
+image2TkVar = tk.StringVar(window)
+image2TkVar.set("Cameraman.tif")
+
+labTkVar = tk.StringVar(window)
+labTkVar.set("Lab 2")
+
+labxTkVar = tk.StringVar(window)
+labxTkVar.set(labTkOptions[labTkVar.get()][0])
+
+saveasTkVar = tk.StringVar(window)
+saveasTkVar.set(saveasTkOptions[1])
+
+RoiCheckTkVar = tk.BooleanVar(window)
+RoiCheckTkVar.set(False)
+OriginalRoi, RoiChess = ReadImage("images/ChessRoi.jpg")
+shapeTmp = RoiChess.shape
+RoiChess = RoiChess[0:shapeTmp[0], 0:shapeTmp[0]]
+RoiChessRe =ImageResize(RoiChess)
+RoiChessReNot = BinaryNot(RoiChessRe)
+
+image1TkVarFilter = tk.OptionMenu(window, image1TkVar, *imageTkOptions)
+image1TkVarFilter.config(width=13)
+image1TkVarFilter.place(x=0.0, y=0.0, anchor=tk.NW)
+
+image2TkVarFilter = tk.OptionMenu(window, image2TkVar, *imageTkOptions)
+image2TkVarFilter.config(width=13)
+image2TkVarFilter.place(x=123, y=0.0, anchor=tk.NW)
+
+labTkVarFilter = tk.OptionMenu(window, labTkVar, *labTkOptions.keys())
+labTkVarFilter.place(relx=0.5, y=0.0, anchor=tk.NE)
+
+labxTkVarFilter = tk.OptionMenu(window, labxTkVar, *labTkOptions[labTkVar.get()])
+labxTkVarFilter.place(relx=0.5, y=0.0, anchor=tk.NW)
+
+saveasTkVarFilter = tk.OptionMenu(window, saveasTkVar, *saveasTkOptions)
+saveasTkVarFilter.config(width=4)
+saveasTkVarFilter.place(relx=.92, y=0.0, anchor=tk.NW)
+
+canvas1 = tk.Canvas(window, width=imgDim, height=imgDim)
+canvas2 = tk.Canvas(window, width=imgDim, height=imgDim)
+canvas3 = tk.Canvas(window, width=imgDim, height=imgDim)
+canvas4 = tk.Canvas(window, width=imgDim, height=imgDim)
+canvas5 = tk.Canvas(window, width=imgDim, height=imgDim)
+
+text = tk.Text(window)
+text.insert(tk.INSERT, "Save As:")
+text.place(relx=.92, y=5, anchor=tk.NE)
+text.config(width=8, height=1.3, state="disabled", pady=2.5, bd=0, bg=window.cget("background"))
+
+
+textInput = tk.Text(window)
+textInput.insert(tk.INSERT, "Inputs")
+textInput.place(relx=.03, rely=.25, anchor=tk.W)
+textInput.config(width=10, height=1.3, state="disabled", pady=2.5, bd=0, bg=window.cget("background"))
+
+
+textResult = tk.Text(window)
+textResult.insert(tk.INSERT, "Result")
+textResult.place(relx=.03, rely=.70, anchor=tk.W)
+textResult.config(width=10, height=1.3, state="disabled", pady=2.5, bd=0, bg=window.cget("background"))
+
+checkbox = tk.Checkbutton(window, text='ROI - Stripe', variable=RoiCheckTkVar, onvalue=True, offvalue=False)
+checkbox.place(relx=0.0, y=43, anchor=tk.W)
+
+
 def DisplayInitImages(img1, img2):
     img1Tmp = ImageResize(img1)
     img2Tmp = ImageResize(img2)
@@ -313,10 +323,10 @@ def DisplayInitImages(img1, img2):
     img2Tmp =  ImageTk.PhotoImage(image=Image.fromarray(img2Tmp))
 
     canvas1.create_image(0, 0, anchor="nw", image=img1Tmp)
-    canvas1.place(relx=0.16, rely=0.08, anchor=tk.NW)
+    canvas1.place(relx=0.2, rely=0.08, anchor=tk.NW)
 
     canvas2.create_image(0, 0, anchor="nw", image=img2Tmp)
-    canvas2.place(relx=0.84, rely=0.08, anchor=tk.NE)
+    canvas2.place(relx=0.9, rely=0.08, anchor=tk.NE)
 
     label1 = tk.Label(window, image=img1Tmp)
     label1.image = img1Tmp
@@ -373,10 +383,9 @@ def Result(img1, img2):
         single = True
         resultImage1 = BinaryOperations(img1, img2, 'xor')
     elif labxOp == "ROI-Based Operation":
-        original2, roiTmp = ReadImage("images/ChessRoi.jpg")
-        roi =ImageResize(roiTmp, img1.shape)
+        roi =ImageResize(RoiChess, img1.shape)
         resultImage1 = BinaryOperations(img1, roi, 'and')
-        roi =ImageResize(roiTmp, img2.shape)
+        roi =ImageResize(RoiChess, img2.shape)
         resultImage2 = BinaryOperations(img2, roi, 'and')
     elif labxOp == "Negative Linear Transform":
         resultImage1 = ImageTransformation(img1, 'negative_linear')
@@ -452,7 +461,6 @@ def Result(img1, img2):
         noiseSalt = np.random.choice([0,255], img1.shape)
         noisePepper = np.random.choice([0,-255], img1.shape)
         resultImage1 = ClippingImage(img1 + noiseSalt + noisePepper)
-        # noise = np.random.choice([0,255], img2.shape)
         noiseSalt = np.random.choice([0,255], img2.shape)
         noisePepper = np.random.choice([0,-255], img2.shape)
         resultImage2 = ClippingImage(img2 + noiseSalt + noisePepper)
@@ -567,13 +575,13 @@ def DisplayResultImages(resultImage1, resultImage2, single):
         resultImage2 =  ImageTk.PhotoImage(image=Image.fromarray(resultImage2))
 
         canvas3.create_image(0, 0, anchor="nw", image=resultImage1)
-        canvas3.place(relx=0.16, rely=0.53, anchor=tk.NW)
+        canvas3.place(relx=0.2, rely=0.53, anchor=tk.NW)
 
         label3 = tk.Label(window, image=resultImage1)
         label3.image = resultImage1
 
         canvas4.create_image(0, 0, anchor="nw", image=resultImage2)
-        canvas4.place(relx=0.84, rely=0.53, anchor=tk.NE)
+        canvas4.place(relx=0.9, rely=0.53, anchor=tk.NE)
 
         label3 = tk.Label(window, image=resultImage2)
         label3.image = resultImage2
@@ -584,6 +592,15 @@ def DisplayResultImages(resultImage1, resultImage2, single):
 def RefreshFrame():
     original1, img1 = ReadImage("images/"+image1TkVar.get())
     original2, img2 = ReadImage("images/"+image2TkVar.get())
+    tmp = labTkVar.get()
+    if tmp == "Lab 3":
+        if img1.shape != img2.shape:
+            img1 = ImageResize(img1, (275, 275))
+            img2 = ImageResize(img2, (275, 275))
+    if tmp == "Lab 5":
+        checkbox.place(relx=0.0, y=0.0, anchor=tk.E)
+    else:
+        checkbox.place(relx=0.0, y=43, anchor=tk.W)
     tmp = labxTkVar.get()
     if tmp == "Histogram Equalisation":
         DisplayInitImages(original1, original2)
@@ -603,6 +620,15 @@ def RefreshFrame():
         cv.imwrite(resPath, resultImage2)
         resultImage2 = ImageResize(resultImage2)
 
+    if RoiCheckTkVar.get() and labTkVar.get() != "Lab 5":
+        imgTmp = ImageResize(img1)
+        img1 = BinaryOperations(imgTmp, RoiChessReNot, 'and')
+        resultImage1 = BinaryOperations(resultImage1, RoiChessRe, 'and') + img1
+        if not single:
+            imgTmp = ImageResize(img2)
+            img2 = BinaryOperations(imgTmp, RoiChessReNot, 'and')
+            resultImage2 = BinaryOperations(resultImage2, RoiChessRe, 'and') + img2
+
     DisplayResultImages(resultImage1, resultImage2, single)
 
 
@@ -620,27 +646,8 @@ image2TkVar.trace('w', ChangeDropdown)
 labTkVar.trace('w', ChangeDropdown)
 labxTkVar.trace('w', ChangeDropdown)
 saveasTkVar.trace('w', ChangeDropdown)
+RoiCheckTkVar.trace('w', ChangeDropdown)
 
 RefreshFrame()
 
 window.mainloop()
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
