@@ -353,7 +353,7 @@ def Result(img1, img2):
         resultImage1 = ShiftingImage(img1)
         resultImage2 = ShiftingImage(img2, "all_random")
     elif labxOp == "Re-Scaling and Shifting":
-        resultImage1 = RescaleImage(img1, .3)
+        resultImage1 = RescaleImage(img1, .7)
         resultImage2 = RescaleImage(img2, 1.8)
         resultImage1 = ShiftingImage(resultImage1)
         resultImage2 = ShiftingImage(resultImage2)

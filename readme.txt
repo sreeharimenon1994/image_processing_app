@@ -6,7 +6,7 @@ There is an ROI checkbox on top left.
 
 1. In Re-Scaling the first image is scaled by 1.5 and second by 0.4.
 2. In Shifting the first image is shifted by a random number and second by a random matrix.
-3. In Re-Scaling and Shifting, the first image is scaled by 0.3 and the second by 1.8 and both are shifted by a random number.
+3. In Re-Scaling and Shifting, the first image is scaled by 0.7 and the second by 1.8 and both are shifted by a random number.
 4. In Addition, Subtraction, Multiplication and Division the scaling is by 0.6 and shifted by a random number.
 5. For ROI-Based Operation, a chess board like image is used and is availbale im images folder by the name "ChessRoi.jpg". Change the variable "RoiFile" to change region.
 6. For Bit-Plane Slicing, bit = 4.
