@@ -5,6 +5,10 @@ import math
 from matplotlib import pyplot as plt
 import matplotlib._pylab_helpers
 from PIL import Image, ImageTk
+import os
+
+if not os.path.exists('results'):
+    os.makedirs('results')
 
 imgDim = 275
 
