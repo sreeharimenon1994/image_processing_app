@@ -11,6 +11,8 @@ if not os.path.exists('results'):
     os.makedirs('results')
 
 imgDim = 275
+# file for ROI operation. Expected to be inside "images" folder
+RoiFile = 'ChessRoi.jpg'
 
 # lookup table for logarithmic operation
 LUTLog = {}
@@ -233,7 +235,12 @@ window.geometry("900x700")
 window.minsize(900, 700)
 window.wm_title("Image Processing Coursework")
 
-imageTkOptions = ["Baboon.bmp", "Cameraman.tif", "Peppers.raw", "Goldhill.tif", "Mars.jpg", "Ocr.png", "WindFarm.png"]
+# imageTkOptions = ["Baboon.bmp", "Cameraman.tif", "Peppers.raw", "Goldhill.tif", "Mars.jpg", "Ocr.png", "WindFarm.png"]
+
+imageTkOptions = list(os.walk('images/'))[0][2]
+imageTkOptions = list(filter(lambda x: x!=RoiFile, imageTkOptions))
+
+
 labTkOptions = {"Lab 1": ["Read Multiple Images"],
                 "Lab 2": ["Re-Scaling", "Shifting", "Re-Scaling and Shifting"],
                 "Lab 3": ["Addition", "Subtraction", "Multiplication", "Division", "Bitwise NOT", "Bitwise AND", "Bitwise OR", "Bitwise XOR", "ROI-Based Operation"],
@@ -264,7 +271,7 @@ saveasTkVar.set(saveasTkOptions[1])
 
 RoiCheckTkVar = tk.BooleanVar(window)
 RoiCheckTkVar.set(False)
-OriginalRoi, RoiChess = ReadImage("images/ChessRoi.jpg")
+OriginalRoi, RoiChess = ReadImage("images/"+RoiFile)
 shapeTmp = RoiChess.shape
 RoiChess = RoiChess[0:shapeTmp[0], 0:shapeTmp[0]]
 RoiChessRe =ImageResize(RoiChess)
@@ -301,13 +308,13 @@ text.config(width=8, height=1.3, state="disabled", pady=2.5, bd=0, bg=window.cge
 
 
 textInput = tk.Text(window)
-textInput.insert(tk.INSERT, "Inputs")
+textInput.insert(tk.INSERT, "Inputs -")
 textInput.place(relx=.03, rely=.25, anchor=tk.W)
 textInput.config(width=10, height=1.3, state="disabled", pady=2.5, bd=0, bg=window.cget("background"))
 
 
 textResult = tk.Text(window)
-textResult.insert(tk.INSERT, "Result")
+textResult.insert(tk.INSERT, "Result -")
 textResult.place(relx=.03, rely=.70, anchor=tk.W)
 textResult.config(width=10, height=1.3, state="disabled", pady=2.5, bd=0, bg=window.cget("background"))
 
@@ -597,7 +604,7 @@ def RefreshFrame():
         if img1.shape != img2.shape:
             img1 = ImageResize(img1, (275, 275))
             img2 = ImageResize(img2, (275, 275))
-    if tmp == "Lab 5":
+    if tmp == "Lab 5" or tmp == "Lab 1":
         checkbox.place(relx=0.0, y=0.0, anchor=tk.E)
     else:
         checkbox.place(relx=0.0, y=43, anchor=tk.W)
