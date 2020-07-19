@@ -40,4 +40,3 @@ To using this repo, some things you should to know:
 ## Documentation
 
 * https://docs.python.org/3/library/tkinter.html
-* 
